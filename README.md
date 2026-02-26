@@ -31,15 +31,38 @@ yolobit-micropython/
 
 ### Dùng extension PyMakr (VSCode)
 
-Bạn có thể dùng **PyMakr** để upload và chạy code lên Yolo:Bit:
+PyMakr dùng được với Yolo:Bit. Cần làm đúng hai việc: **mở đúng project (thư mục code)** và **chọn đúng cổng COM** khi Yolo:Bit cắm USB.
 
-1. Cài extension **PyMakr** trong VSCode (Pycom).
-2. Kết nối Yolo:Bit qua USB; trong PyMakr chọn đúng **cổng COM** (Windows: `COM3`, macOS: `/dev/cu.usbserial-...`, Linux: `/dev/ttyUSB0`).
-3. **Upload:** dùng lệnh **Upload** / **Sync** của PyMakr để đồng bộ toàn bộ thư mục project (hoặc các file `main.py`, `config.py`, `tasks.py`) lên board.
-4. Trên board, chạy `main.py` (qua REPL: `import main` hoặc PyMakr **Run** nếu bạn chọn file `main.py`).
-5. **Console/REPL** của PyMakr dùng làm Serial Monitor (baud thường 115200) để xem `print("Xin chào!")`.
+#### 1. Mở project hiện tại (không tạo project mới)
 
-Trong project có file **`pymakr.conf`** mẫu: sửa `address` thành cổng COM của máy bạn (xem trong PyMakr hoặc Device Manager / `ls /dev/cu.*` trên macOS).
+- **Workspace = thư mục đang mở trong VSCode.** Để làm việc đúng với source hiện tại, hãy dùng **File → Open Folder** của **VSCode** (không phải nút Open trong PyMakr), chọn thư mục **yolobit-micropython**. Khi đó workspace chính là source của bạn.
+- **Nút "Open" trong PyMakr** thường dùng để *chọn thư mục cho project PyMakr*; nó có thể mở cửa sổ mới hoặc đổi workspace, nên bạn cảm giác "không thể ở workspace ở source hiện tại". Cách làm đúng: **trước tiên** mở thư mục bằng **File → Open Folder** (VSCode) → chọn `yolobit-micropython` → Open. Sau đó **không cần** bấm "Open" trong PyMakr; chỉ dùng PyMakr để Connect, Upload, mở Console. Project trong PyMakr sẽ trỏ đúng thư mục đang mở.
+- **Không** dùng “Create project” / “New project” trong PyMakr — nếu tạo project mới, PyMakr sẽ tạo thư mục khác và bạn không thấy code của mình.
+- Nếu vẫn thấy “Empty Project”: đóng VSCode, mở lại và **File → Open Folder** vào `yolobit-micropython`.
+
+#### 2. PyMakr không có mục “chọn board Yolobit”
+
+- Trong PyMakr **không có** danh sách board (Yolo:Bit, ESP32, …). Extension chỉ hiển thị danh sách **cổng COM / serial** do máy tính báo.
+- Các mục kiểu **tty.Bluetooth-Incoming-Port**, **tty.EDIFIERX2s**, **tty.RedmiBuds...** (hoặc “unknown?”) là cổng Bluetooth / thiết bị khác, **không phải** Yolo:Bit.
+- Để dùng Yolo:Bit với PyMakr:
+  1. **Cắm Yolo:Bit vào máy bằng cáp USB** (không dùng kết nối Bluetooth cho nạp code).
+  2. Chờ vài giây; nếu đã cài driver USB (CH340, CP210x, …) thì sẽ xuất hiện **một cổng serial mới** (ví dụ macOS: `/dev/cu.usbserial-xxxx`, `/dev/cu.SLAB_USBtoUART`; Windows: `COM3`, `COM4`; Linux: `/dev/ttyUSB0`).
+  3. Trong PyMakr, **chọn cổng đó** (có thể qua “Add device” hoặc cấu hình `address` trong `pymakr.conf`).
+- Nếu **không thấy** cổng USB sau khi cắm Yolo:Bit: cài driver theo [hướng dẫn OhStem](https://docs.ohstem.vn/) (Thiết lập và cài đặt Driver).
+
+#### 3. Cấu hình và Upload
+
+- Mở file **`pymakr.conf`** trong project; sửa **`address`** thành cổng COM của Yolo:Bit (ví dụ `"COM3"` trên Windows, `"/dev/cu.usbserial-0001"` trên macOS). Để trống nếu bạn chọn cổng trực tiếp trong PyMakr.
+- **Upload:** trong Pymakr chọn **Upload project to device** (icon mây + mũi tên lên) để đồng bộ file lên board.
+- **Chạy:** trên board sẽ tự chạy `main.py` khi reset; hoặc mở **Console/REPL** (icon `>_`) rồi gõ `import main` để chạy. Dùng Console để xem `print("Xin chào!")` (baud thường 115200).
+
+#### 4. Sau khi upload: có cần chạy main.py? Code có chạy khi rút USB?
+
+- **Không cần “chạy main.py” từ VSCode sau khi upload.** File đã nằm trong bộ nhớ của Yolo:Bit. Mỗi lần **bật nguồn hoặc nhấn nút Reset**, board sẽ tự chạy `boot.py` rồi `main.py`. Chỉ cần upload xong rồi reset (hoặc rút USB rồi cắm lại / bật nguồn) là chương trình chạy (LED chớp, in "Xin chào!" nếu có nối serial).
+- **Rút USB (rút COM) ra thì sao?**
+  - Nếu Yolo:Bit **chỉ dùng nguồn USB**: rút ra = mất điện = board tắt, code không chạy. **Code vẫn còn** trong board; lần sau cắm USB (hoặc cấp nguồn khác) và bật lại thì `main.py` lại tự chạy.
+  - Nếu Yolo:Bit **có nguồn pin/ắc-quy** (cổng pin hoặc pin gắn trên board): rút USB thì board vẫn chạy bằng nguồn đó, LED vẫn chớp, code vẫn chạy bình thường.
+- Tóm lại: Upload một lần, code được lưu trên board; mỗi lần bật nguồn/reset là chạy. Rút COM chỉ ngắt nguồn (nếu không có pin), không xóa code.
 
 ## Hai task mẫu
 
@@ -89,6 +112,7 @@ Chỉ dùng **các thư viện mà Yolo:Bit/OhStem hỗ trợ** (ví dụ `yolob
 - Không thấy "Xin chào!" → kiểm tra Serial Monitor đúng cổng và baud **115200**.
 - LED không chớp → kiểm tra `config.py` (LED onboard vs P0), nối dây đúng chân và GND.
 - Lỗi `no module named 'yolobit'` → dùng firmware MicroPython đúng cho Yolo:Bit (OhStem).
+- **PyMakr:** Chỉ thấy Bluetooth (tty.RedmiBuds, tty.EDIFIER...) → cắm Yolo:Bit bằng **cáp USB** và cài driver; chọn cổng serial USB (ví dụ `/dev/cu.usbserial-*`, `COMx`), không chọn cổng Bluetooth. Không mở được project → dùng **File → Open Folder** vào thư mục chứa `main.py`/`pymakr.conf`, không tạo "Create project" mới.
 
 ## Tài liệu tham khảo
 
