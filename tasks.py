@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Các task chạy theo lịch (kiểu RTOS).
-Mỗi task là một hàm không tham số; scheduler sẽ gọi theo chu kỳ đã cấu hình.
-Chỉ dùng thư viện mà Yolobit/OhStem hỗ trợ (yolobit, time, machine, ...).
+Các callback cho event_manager (OhStem).
+Dùng thư viện event_manager của OhStem: mỗi "task" là timer event callback,
+đăng ký bằng event_manager.add_timer_event(interval_ms, callback).
+Đặt tên hàm callback theo chuẩn: on_event_timer_callback_<mô tả>.
+Chỉ dùng thư viện Yolobit/OhStem hỗ trợ (yolobit, time, machine, ...).
 """
 
 import time
 
-# Sẽ được gán trong main sau khi import yolobit và config
 _config = None
 _led_pin = None
 _led_state = 0  # Trạng thái LED để chớp (0/1)
@@ -27,18 +28,18 @@ def _get_led_pin():
     return _led_pin
 
 
-def task_print_hello():
+def on_event_timer_callback_print_hello():
     """
-    Task 1: In ra terminal/serial dòng chữ "Xin chào!" mỗi chu kỳ.
+    Timer event callback: in ra serial "Xin chào!" mỗi chu kỳ.
     Xem trên Serial Monitor (app OhStem hoặc VSCode, baud 115200).
     """
     print("Xin chào!")
 
 
-def task_blink_led():
+def on_event_timer_callback_blink_led():
     """
-    Task 2: Chớp tắt LED (đảo trạng thái mỗi lần gọi).
-    LED có thể là LED trên board hoặc LED nối vào chân P0 (xem config.py).
+    Timer event callback: chớp tắt LED (đảo trạng thái mỗi lần gọi).
+    LED: onboard hoặc chân P0 (xem config.py).
     Tương thích yolobit: write_digital(0/1) hoặc write_analog(0/1023).
     """
     global _led_state
@@ -57,6 +58,6 @@ def task_blink_led():
 
 
 def set_config(cfg):
-    """Gán config từ main (để tasks dùng USE_BUILTIN_LED, PIN_LED, ...)."""
+    """Gán config từ main (để callbacks dùng USE_BUILTIN_LED, PIN_LED, ...)."""
     global _config
     _config = cfg

@@ -1,11 +1,11 @@
 # Yolobit MicroPython – Template RTOS (VSCode)
 
-Template lập trình **MicroPython** cho **Yolo:Bit** (OhStem) trên **VSCode**, tổ chức theo hướng **nhiều task** chạy theo chu kỳ (giống RTOS). Tương thích với thư viện và cách đặt tên chân của **code kéo thả OhStem** (app.ohstem.vn).
+Template lập trình **MicroPython** cho **Yolo:Bit** (OhStem) trên **VSCode**, dùng thư viện **event_manager** của OhStem (giống code do app kéo thả sinh ra). Các "task" là **timer event callback**, đăng ký bằng `event_manager.add_timer_event(interval_ms, callback)`, vòng lặp chính: `event_manager.run()` + `time.sleep_ms(10)`.
 
 ## Yêu cầu
 
 - **Phần cứng:** Yolo:Bit (OhStem), có thể kèm mạch mở rộng.
-- **Firmware:** MicroPython cho Yolo:Bit (cài qua app OhStem hoặc hướng dẫn chính thức).
+- **Firmware:** MicroPython cho Yolo:Bit (cài qua app OhStem hoặc hướng dẫn chính thức). Cần có thư viện **event_manager** (có sẵn trong firmware/app OhStem).
 - **Môi trường:** VSCode + extension MicroPython (ví dụ **PyMakr**, **MicroPico** / **MicroPython**), hoặc app OhStem để nạp code và mở Serial Monitor.
 
 ## Cấu trúc thư mục
@@ -64,12 +64,12 @@ PyMakr dùng được với Yolo:Bit. Cần làm đúng hai việc: **mở đún
   - Nếu Yolo:Bit **có nguồn pin/ắc-quy** (cổng pin hoặc pin gắn trên board): rút USB thì board vẫn chạy bằng nguồn đó, LED vẫn chớp, code vẫn chạy bình thường.
 - Tóm lại: Upload một lần, code được lưu trên board; mỗi lần bật nguồn/reset là chạy. Rút COM chỉ ngắt nguồn (nếu không có pin), không xóa code.
 
-## Hai task mẫu
+## Hai task mẫu (timer event callbacks)
 
-| Task | Mô tả | Chu kỳ (mặc định) |
-|------|--------|--------------------|
-| **task_print_hello** | In ra serial dòng `Xin chào!` | Mỗi 1 giây |
-| **task_blink_led**   | Chớp tắt LED (P0 hoặc LED onboard) | Mỗi 0,5 giây |
+| Callback | Mô tả | Chu kỳ (mặc định) |
+|----------|--------|--------------------|
+| **on_event_timer_callback_print_hello** | In ra serial "Xin chào!" | Mỗi 1 giây |
+| **on_event_timer_callback_blink_led**   | Chớp tắt LED (P0 hoặc onboard) | Mỗi 0,5 giây |
 
 - **In ra terminal:** dùng `print("Xin chào!")` trong task; xem trên Serial Monitor (app OhStem hoặc VSCode).
 - **LED:** cấu hình trong `config.py` — dùng LED trên board hoặc LED nối vào chân **P0** (giống kéo thả: chân P0).
@@ -85,24 +85,25 @@ PyMakr dùng được với Yolo:Bit. Cần làm đúng hai việc: **mở đún
 
 Chỉnh các giá trị này cho phù hợp board và bài tập.
 
-## Thêm task mới
+## Thêm task mới (timer event)
 
-1. **Trong `tasks.py`:** viết hàm không tham số, ví dụ:
+1. **Trong `tasks.py`:** viết callback đặt tên `on_event_timer_callback_<mô_tả>`, ví dụ:
    ```python
-   def task_do_something():
+   def on_event_timer_callback_do_something():
        print("Task cua toi")
        # ... gọi API yolobit / machine / thư viện OhStem
    ```
-2. **Trong `config.py`:** thêm hằng chu kỳ (ms), ví dụ `INTERVAL_MY_TASK_MS = 2000`.
-3. **Trong `main.py`:** thêm vào danh sách `TASKS`:
+2. **Trong `config.py`:** thêm chu kỳ (ms), ví dụ `INTERVAL_MY_TASK_MS = 2000`.
+3. **Trong `main.py`:** sau khi `event_manager.reset()`, thêm dòng:
    ```python
-   (config.INTERVAL_MY_TASK_MS, tasks.task_do_something),
+   event_manager.add_timer_event(config.INTERVAL_MY_TASK_MS, tasks.on_event_timer_callback_do_something)
    ```
 
-Chỉ dùng **các thư viện mà Yolo:Bit/OhStem hỗ trợ** (ví dụ `yolobit`, `machine`, `time`, thư viện mở rộng từ app OhStem) để giống với môi trường code kéo thả.
+Chỉ dùng **thư viện Yolo:Bit/OhStem** (yolobit, event_manager, machine, time, ...) để đồng bộ với code kéo thả.
 
 ## Đồng bộ với code kéo thả OhStem
 
+- **event_manager:** Chương trình dùng thư viện **event_manager** của OhStem: `event_manager.reset()`, `event_manager.add_timer_event(interval_ms, callback)`, vòng lặp `event_manager.run()` + `time.sleep_ms(10)`. Cấu trúc giống code Python do app OhStem sinh ra khi lập trình kéo thả.
 - **Chân:** Dùng tên `pin0`, `pin1`, `pin2`, ... tương ứng P0, P1, P2 trong app OhStem; cấu hình trong `config.py` bằng `PIN_LED = "pin0"`, v.v.
 - **API:** Dùng `write_digital(0/1)`, `read_digital()`, `write_analog()`, `read_analog()` trên đối tượng pin từ `yolobit` như trong code sinh ra từ khối kéo thả.
 - **Thư viện mở rộng:** Nếu dùng Kit (Home:Bit, Plant:Bit, City:Bit, …), copy các file `.py` thư viện đó vào project và `import` trong `tasks.py` hoặc `main.py` giống trong app OhStem.
