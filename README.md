@@ -6,17 +6,18 @@ Template lập trình **MicroPython** cho **Yolo:Bit** (OhStem) trên **VSCode**
 
 - **Phần cứng:** Yolo:Bit (OhStem), có thể kèm mạch mở rộng.
 - **Firmware:** MicroPython cho Yolo:Bit (cài qua app OhStem hoặc hướng dẫn chính thức).
-- **Môi trường:** VSCode + extension MicroPython (ví dụ **MicroPico** / **MicroPython**), hoặc app OhStem để nạp code và mở Serial Monitor.
+- **Môi trường:** VSCode + extension MicroPython (ví dụ **PyMakr**, **MicroPico** / **MicroPython**), hoặc app OhStem để nạp code và mở Serial Monitor.
 
 ## Cấu trúc thư mục
 
 ```
 yolobit-micropython/
-├── boot.py      # (Tùy chọn) Chạy trước main.py
-├── main.py      # Điểm vào, scheduler và danh sách task
-├── config.py    # Cấu hình: LED, chu kỳ task, ...
-├── tasks.py     # Các task: in "Xin chào!", chớp LED, ...
-└── README.md    # Hướng dẫn này
+├── boot.py        # (Tùy chọn) Chạy trước main.py
+├── main.py        # Điểm vào, scheduler và danh sách task
+├── config.py      # Cấu hình: LED, chu kỳ task, ...
+├── tasks.py       # Các task: in "Xin chào!", chớp LED, ...
+├── pymakr.conf    # Cấu hình PyMakr (sửa address = cổng COM)
+└── README.md      # Hướng dẫn này
 ```
 
 ## Setup nhanh
@@ -27,6 +28,18 @@ yolobit-micropython/
 4. **Nạp code** (Run / Upload tùy extension):
    - Nạp ít nhất: `main.py`, `config.py`, `tasks.py`.
 5. **Mở Serial Monitor** (baud thường **115200**) để xem dòng `Xin chào!` và gỡ lỗi.
+
+### Dùng extension PyMakr (VSCode)
+
+Bạn có thể dùng **PyMakr** để upload và chạy code lên Yolo:Bit:
+
+1. Cài extension **PyMakr** trong VSCode (Pycom).
+2. Kết nối Yolo:Bit qua USB; trong PyMakr chọn đúng **cổng COM** (Windows: `COM3`, macOS: `/dev/cu.usbserial-...`, Linux: `/dev/ttyUSB0`).
+3. **Upload:** dùng lệnh **Upload** / **Sync** của PyMakr để đồng bộ toàn bộ thư mục project (hoặc các file `main.py`, `config.py`, `tasks.py`) lên board.
+4. Trên board, chạy `main.py` (qua REPL: `import main` hoặc PyMakr **Run** nếu bạn chọn file `main.py`).
+5. **Console/REPL** của PyMakr dùng làm Serial Monitor (baud thường 115200) để xem `print("Xin chào!")`.
+
+Trong project có file **`pymakr.conf`** mẫu: sửa `address` thành cổng COM của máy bạn (xem trong PyMakr hoặc Device Manager / `ls /dev/cu.*` trên macOS).
 
 ## Hai task mẫu
 
