@@ -27,6 +27,7 @@ yolobit-micropython/
 ├── task1.py, task2.py           # task mẫu: in serial, chớp đèn
 ├── task_mqtt.py, task_ntp.py, task_aiot.py, task_event.py  # task kiểm thử từng thư viện lib
 ├── pymakr.conf      # PyMakr: sync_file_types = "py" → chỉ upload file .py (vẫn sync cả thư mục lib/)
+├── yolobit-micropython.code-workspace  # Mở file này (Open Workspace from File) để PyMakr nhận project và hiện ADD DEVICES
 ├── lib/             # Thư viện OhStem: MQTT, NTP, Sự kiện, AIOT (xem lib/README.md)
 ├── images/          # ảnh minh họa cho README
 └── README.md
@@ -61,8 +62,10 @@ yolobit-micropython/
 1. VSCode → **File → Open Folder…**
 2. Chọn thư mục `yolobit-micropython` (thư mục chứa `main.py`, `pymakr.conf`, …).
 
+**Cách mở để thấy ADD DEVICES:** PyMakr 2 chỉ hiện **ADD DEVICES** khi nhận ra project (thư mục có `pymakr.conf`). Nếu đang mở folder mà vẫn thấy "Create project" / "Open Workspace", hãy dùng **File → Open Workspace from File…** rồi chọn file **`yolobit-micropython.code-workspace`** trong thư mục project — sau đó panel PyMakr sẽ hiện **Yolobit MicroPython** và **ADD DEVICES**.
+
 Lưu ý:
-- **Đừng tạo “New project” trong PyMakr** cho trường hợp này. Project của bạn chính là folder đang mở trong VSCode.
+- **Đừng tạo “New project” trong PyMakr** cho trường hợp này. Dùng **Open Workspace from File…** và chọn file `yolobit-micropython.code-workspace` để PyMakr nhận project và hiện ADD DEVICES.
 
 ### C. Cấu hình `pymakr.conf` (khuyến nghị)
 
