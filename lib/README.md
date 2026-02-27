@@ -1,15 +1,15 @@
 # Thư mục lib – Thư viện OhStem cho VSCode/MicroPython
 
-Các thư viện trong thư mục này tương đương **Mở rộng** trên app.ohstem.vn (AIOT KIT, Sự kiện, MQTT, NTP). Bản **chạy trên board** đã được đặt **cùng cấp với main.py** (mqtt.py, ntp_helper.py, event_manager_ohstem.py, aiot_dht20.py, aiot_rgbled.py, …) để PyMakr sync được; thư mục **lib/** giữ bản gốc để tham khảo.
+Các thư viện trong thư mục này tương đương **Mở rộng** trên app.ohstem.vn (AIOT KIT, Sự kiện, MQTT, NTP). Khi **Sync project to device**, PyMakr đồng bộ cả cây thư mục nên **lib/** (và **lib/aiot/**) được upload lên Yolo:Bit; dùng **sync_file_types = "py"** thì chỉ file .py được sync (README không đưa lên).
 
-**Import (trên board / trong code dùng sau khi Sync):**
+**Import (sau khi Sync, trên board):**
 
 ```python
-from mqtt import mqtt
-from ntp_helper import set_time_from_ntp, get_time, get_time_str
-from event_manager_ohstem import event_manager
-from aiot_dht20 import DHT20
-from aiot_rgbled import RGBLed
+from lib.mqtt import mqtt
+from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
+from lib.event_manager_ohstem import event_manager
+from lib.aiot.aiot_dht20 import DHT20
+from lib.aiot.aiot_rgbled import RGBLed
 ```
 
 ---
@@ -34,7 +34,7 @@ from aiot_rgbled import RGBLed
 ### Ví dụ
 
 ```python
-from mqtt import mqtt
+from lib.mqtt import mqtt
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='user', password='')
 mqtt.publish('V1', 'Hello')
@@ -66,8 +66,8 @@ while True:
 ### Ví dụ
 
 ```python
-from mqtt import mqtt
-from ntp_helper import set_time_from_ntp, get_time, get_time_str
+from lib.mqtt import mqtt
+from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 set_time_from_ntp(7)
 print(get_time_str())
@@ -96,7 +96,7 @@ y, mo, d, h, mi, s = get_time()
 ### Ví dụ
 
 ```python
-from event_manager_ohstem import event_manager
+from lib.event_manager_ohstem import event_manager
 import time
 event_manager.reset()
 event_manager.add_timer_event(1000, lambda: print('timer'))

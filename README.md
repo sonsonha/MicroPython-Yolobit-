@@ -23,16 +23,12 @@ Template này giúp bạn lập trình **Yolo:Bit (OhStem)** bằng **MicroPytho
 yolobit-micropython/
 ├── main.py          # chương trình chính: reset, task_init, add_timer_event, while True run()
 ├── event_manager.py # (kèm theo) polyfill nếu firmware thiếu event_manager
-├── config.py        # chu kỳ task: INTERVAL_TASK1_MS, INTERVAL_TASK2_MS, ...
-├── task1.py         # task 1: task_init(), task_run(), status toàn cục
-├── task2.py         # task 2: chớp Image.HEART / Image.HEART_SMALL (giống block OhStem)
-├── pymakr.conf      # PyMakr: sync_file_types = "py" → chỉ upload file .py
-├── lib/             # Bản gốc thư viện (tham khảo); file chạy trên board ở cùng cấp với main.py
-├── event_manager_ohstem.py  # event_manager đầy đủ OhStem (timer + message + condition)
-├── mqtt.py, umqtt_simple.py, umqtt_robust.py, utility.py  # MQTT OhStem
-├── ntp_helper.py            # NTP
-├── aiot_dht20.py, aiot_rgbled.py  # AIOT KIT (DHT20, NeoPixel)
-├── images/          # ảnh minh họa cho README (extension, device explorer, terminal)
+├── config.py        # chu kỳ task (INTERVAL_TASK1_MS, ...) + tùy chọn WiFi/MQTT cho task_mqtt
+├── task1.py, task2.py           # task mẫu: in serial, chớp đèn
+├── task_mqtt.py, task_ntp.py, task_aiot.py, task_event.py  # task kiểm thử từng thư viện lib
+├── pymakr.conf      # PyMakr: sync_file_types = "py" → chỉ upload file .py (vẫn sync cả thư mục lib/)
+├── lib/             # Thư viện OhStem: MQTT, NTP, Sự kiện, AIOT (xem lib/README.md)
+├── images/          # ảnh minh họa cho README
 └── README.md
 ```
 
@@ -186,7 +182,7 @@ Lưu ý: Nếu `main.py` chạy vòng lặp vô hạn, REPL sẽ “bận”. Mu
 
 Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT**, **Sự kiện**, **MQTT**, **NTP**. Project này đã kèm sẵn các thư viện tương ứng trong thư mục **`lib/`** để dùng khi lập trình Python trên VSCode.
 
-**Lưu ý:** Các file thư viện (mqtt, ntp_helper, event_manager_ohstem, aiot_dht20, aiot_rgbled, …) nằm **cùng cấp với main.py** để PyMakr sync lên board được. Trong `pymakr.conf` đặt **sync_file_types = "py"** thì chỉ file `.py` được upload (README.md, .json không đưa lên thiết bị). Chi tiết và ví dụ xem **`lib/README.md`**.
+**Lưu ý:** Thư viện nằm trong **`lib/`** (và `lib/aiot/`). Khi **Sync project to device**, PyMakr đồng bộ **toàn bộ cây thư mục** (vì `sync_folder` để rỗng); **sync_file_types = "py"** chỉ lọc theo loại file nên mọi file **.py** trong project — kể cả trong `lib/`, `lib/aiot/` — đều được upload, còn README.md, .json, v.v. thì không. Vì vậy bạn có thể upload được thư mục **lib** lên Yolo:Bit và dùng `from lib.mqtt import mqtt`, `from lib.aiot.aiot_dht20 import DHT20`, ... Chi tiết và ví dụ xem **`lib/README.md`**.
 
 ---
 
@@ -194,7 +190,7 @@ Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT*
 
 **Nguồn OhStem:** [AITT-VN/yolobit_extension_mqtt](https://github.com/AITT-VN/yolobit_extension_mqtt)
 
-**Import:** `from mqtt import mqtt`
+**Import:** `from lib.mqtt import mqtt`
 
 | Hàm / thuộc tính | Mô tả |
 |------------------|--------|
@@ -208,7 +204,7 @@ Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT*
 **Ví dụ:**
 
 ```python
-from mqtt import mqtt
+from lib.mqtt import mqtt
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='user', password='')
 mqtt.publish('V1', 'Hello')
@@ -225,7 +221,7 @@ mqtt.on_receive_message('V2', on_msg)
 **Nguồn OhStem (block NTP):** [AITT-VN/yolobit_ntp](https://github.com/AITT-VN/yolobit_ntp)  
 *(Trong repo là block; project dùng `lib/ntp_helper.py` gọi `ntptime` + `machine.RTC` tương thích block.)*
 
-**Import:** `from ntp_helper import set_time_from_ntp, get_time, get_time_str`
+**Import:** `from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -236,8 +232,8 @@ mqtt.on_receive_message('V2', on_msg)
 **Ví dụ:**
 
 ```python
-from mqtt import mqtt
-from ntp_helper import set_time_from_ntp, get_time, get_time_str
+from lib.mqtt import mqtt
+from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 set_time_from_ntp(7)  # GMT+7 Việt Nam
 print(get_time_str())  # "2025-02-27 10:30:00"
@@ -250,7 +246,7 @@ y, mo, d, h, mi, s = get_time()
 
 **Nguồn OhStem:** [AITT-VN/yolobit_extension_events](https://github.com/AITT-VN/yolobit_extension_events)
 
-**Import:** `from event_manager_ohstem import event_manager`
+**Import:** `from lib.event_manager_ohstem import event_manager`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -264,7 +260,7 @@ y, mo, d, h, mi, s = get_time()
 **Ví dụ:**
 
 ```python
-from event_manager_ohstem import event_manager
+from lib.event_manager_ohstem import event_manager
 import time
 event_manager.reset()
 def on_timer():
@@ -289,7 +285,7 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 
 #### 4.1. DHT20 – Cảm biến nhiệt độ, độ ẩm
 
-**Import:** `from aiot_dht20 import DHT20`
+**Import:** `from lib.aiot.aiot_dht20 import DHT20`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -301,14 +297,14 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 **Ví dụ:**
 
 ```python
-from aiot_dht20 import DHT20
+from lib.aiot.aiot_dht20 import DHT20
 dht = DHT20()
 print(dht.dht20_temperature(), dht.dht20_humidity())
 ```
 
 #### 4.2. RGBLed – LED RGB (NeoPixel)
 
-**Import:** `from aiot_rgbled import RGBLed`
+**Import:** `from lib.aiot.aiot_rgbled import RGBLed`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -319,7 +315,7 @@ print(dht.dht20_temperature(), dht.dht20_humidity())
 **Ví dụ:**
 
 ```python
-from aiot_rgbled import RGBLed
+from lib.aiot.aiot_rgbled import RGBLed
 rgb = RGBLed(pin14.pin, 4)  # pin14 từ yolobit, 4 LED
 rgb.show(1, (255, 0, 0))    # LED 1 đỏ
 rgb.show(0, (0, 255, 0))    # tất cả xanh lá
@@ -338,6 +334,19 @@ rgb.off(0)
 | AIOT KIT | https://github.com/AITT-VN/yolobit_extension_aiot |
 
 Tổ chức OhStem (AITT-VN): https://github.com/AITT-VN
+
+## Task kiểm thử thư viện (task_mqtt, task_ntp, task_aiot, task_event)
+
+Để đảm bảo các thư viện trong **lib/** hoạt động trên Yolo:Bit, project có bốn task tương ứng:
+
+| Task | File | Thư viện kiểm thử | Cách test |
+|------|------|-------------------|-----------|
+| **Task MQTT** | `task_mqtt.py` | `lib.mqtt` | In `[MQTT] lib OK` hoặc `[MQTT] OK, wifi connected` nếu cấu hình WiFi trong `config.py` (WIFI_SSID, WIFI_PASSWORD, tùy chọn MQTT_*). |
+| **Task NTP** | `task_ntp.py` | `lib.ntp_helper` | In `[NTP] lib OK` và mỗi chu kỳ in `[NTP] YYYY-MM-DD HH:MM:SS`. Nếu có WiFi (vd từ task_mqtt), sẽ tự đồng bộ NTP một lần. |
+| **Task AIOT** | `task_aiot.py` | `lib.aiot` (DHT20, RGBLed) | Nếu có DHT20: in nhiệt độ, độ ẩm. Nếu có NeoPixel (pin14, 4 LED): chớp đỏ/xanh lá/xanh dương. Không có phần cứng: in `[AIOT] lib OK (khong co cam bien/pin)`. |
+| **Task Event** | `task_event.py` | `lib.event_manager_ohstem` | Dùng `add_message_event(0, callback)` và `broadcast_message(0)`; mỗi chu kỳ in `[Event] nhan message 0 (lib.event_manager_ohstem)`. |
+
+Tất cả task được đăng ký trong **main.py** với chu kỳ trong **config.py** (`INTERVAL_TASK_MQTT_MS`, `INTERVAL_TASK_NTP_MS`, `INTERVAL_TASK_AIOT_MS`, `INTERVAL_TASK_EVENT_MS`). Sau khi **Sync** và **Soft reset**, mở Serial/REPL để xem log từng task — nếu thấy các dòng `[MQTT]`, `[NTP]`, `[AIOT]`, `[Event]` tương ứng thì thư viện đã import và chạy đúng. Để chỉ test một task, có thể tạm comment các dòng `task_xxx.task_init()` và `event_manager.add_timer_event(..., task_xxx.task_run)` của task khác trong **main.py**.
 
 ## Các chức năng PyMakr hay dùng (tóm tắt)
 
@@ -361,9 +370,16 @@ Tổ chức OhStem (AITT-VN): https://github.com/AITT-VN
 
 - Chớp qua lại `Image.HEART` và `Image.HEART_SMALL` (giống block OhStem).
 
-Chu kỳ nằm trong `config.py`:
-- `INTERVAL_TASK1_MS = 1000`
-- `INTERVAL_TASK2_MS = 500`
+### Task kiểm thử thư viện: `task_mqtt.py`, `task_ntp.py`, `task_aiot.py`, `task_event.py`
+
+- **task_mqtt**: dùng `lib.mqtt` — kết nối WiFi/MQTT nếu cấu hình trong config, mỗi chu kỳ gọi `mqtt.check_message()` và in trạng thái.
+- **task_ntp**: dùng `lib.ntp_helper` — in thời gian RTC mỗi chu kỳ; đồng bộ NTP khi đã có WiFi.
+- **task_aiot**: dùng `lib.aiot` — đọc DHT20 hoặc chớp RGBLed nếu có phần cứng; nếu không chỉ in "lib OK".
+- **task_event**: dùng `lib.event_manager_ohstem` — đăng ký message 0 và mỗi chu kỳ gửi broadcast để in "[Event] nhan message 0".
+
+Chu kỳ nằm trong **config.py**:
+- `INTERVAL_TASK1_MS = 1000`, `INTERVAL_TASK2_MS = 500`
+- `INTERVAL_TASK_MQTT_MS`, `INTERVAL_TASK_NTP_MS`, `INTERVAL_TASK_AIOT_MS`, `INTERVAL_TASK_EVENT_MS` (mặc định 5000, 5000, 3000, 2000).
 
 ## Thêm task mới
 

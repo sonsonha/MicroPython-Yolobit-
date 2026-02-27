@@ -15,6 +15,10 @@ from event_manager import *
 import config
 import task1
 import task2
+import task_mqtt
+import task_ntp
+import task_aiot
+import task_event
 
 # Khởi tạo event manager
 event_manager.reset()
@@ -22,10 +26,18 @@ event_manager.reset()
 # Gọi task_init()
 task1.task_init()
 task2.task_init()
+task_mqtt.task_init()
+task_ntp.task_init()
+task_aiot.task_init()
+task_event.task_init()
 
 # Đăng ký task_run() của từng task vào event_manager (timer event)
 event_manager.add_timer_event(config.INTERVAL_TASK1_MS, task1.task_run)
 event_manager.add_timer_event(config.INTERVAL_TASK2_MS, task2.task_run)
+event_manager.add_timer_event(config.INTERVAL_TASK_MQTT_MS, task_mqtt.task_run)
+event_manager.add_timer_event(config.INTERVAL_TASK_NTP_MS, task_ntp.task_run)
+event_manager.add_timer_event(config.INTERVAL_TASK_AIOT_MS, task_aiot.task_run)
+event_manager.add_timer_event(config.INTERVAL_TASK_EVENT_MS, task_event.task_run)
 
 # In ra serial (Serial Monitor 115200)
 print("Yolobit event_manager - bat dau.")

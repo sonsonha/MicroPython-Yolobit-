@@ -6,3 +6,17 @@ PIN_LED = "pin0"
 
 INTERVAL_TASK1_MS = 1000
 INTERVAL_TASK2_MS = 500
+
+# Task kiểm thử thư viện lib (MQTT, NTP, AIOT, Event)
+INTERVAL_TASK_MQTT_MS = 5000
+INTERVAL_TASK_NTP_MS = 5000
+INTERVAL_TASK_AIOT_MS = 3000
+INTERVAL_TASK_EVENT_MS = 2000
+
+# Tùy chọn: WiFi và MQTT cho task_mqtt / NTP (để trống nếu không dùng)
+# WIFI_SSID = "TenWiFi"
+# WIFI_PASSWORD = "MatKhau"
+# MQTT_SERVER = "mqtt.ohstem.vn"
+# MQTT_PORT = 1883
+# MQTT_USER = ""
+# MQTT_PASSWORD = ""
