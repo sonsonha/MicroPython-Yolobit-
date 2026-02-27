@@ -1,43 +1,35 @@
 # -*- coding: utf-8 -*-
 """
-Chương trình chính - Yolobit MicroPython (VSCode).
-Dùng thư viện event_manager của OhStem: đăng ký timer event, vòng lặp gọi event_manager.run().
-Code tương đương với code do app OhStem sinh ra khi lập trình kéo thả.
+Yolobit MicroPython - Template RTOS (VSCode).
+Dùng event_manager (OhStem): mỗi task nằm trong file riêng (task1.py, task2.py, ...),
+có task_init() và task_run(); task_run() được add vào event_manager.add_timer_event().
 
 Cách thêm task mới:
-  1. Trong tasks.py: viết callback on_event_timer_callback_<tên>().
-  2. Trong config.py: thêm INTERVAL_xxx_MS nếu cần.
-  3. Ở dưới: gọi event_manager.add_timer_event(interval_ms, tasks.on_event_timer_callback_<tên>).
+  1. Tạo file taskN.py với status toàn cục, task_init(), task_run().
+  2. Trong config.py: thêm INTERVAL_TASKN_MS.
+  3. Trong main.py: gọi taskN.task_init(); event_manager.add_timer_event(..., taskN.task_run).
 """
 
 import time
 from event_manager import *
 import config
-import tasks
+import task1
+import task2
 
-# Gán config cho module tasks (LED, ...)
-tasks.set_config(config)
-
-# Khởi tạo event manager (chuẩn OhStem)
+# Khởi tạo event manager
 event_manager.reset()
 
-# --- Đăng ký timer event (giống code kéo thả OhStem sinh ra) ---
-# Task 1: in "Xin chào!" mỗi INTERVAL_PRINT_HELLO_MS
-event_manager.add_timer_event(
-    config.INTERVAL_PRINT_HELLO_MS,
-    tasks.on_event_timer_callback_print_hello
-)
-# Task 2: chớp LED mỗi INTERVAL_LED_BLINK_MS
-event_manager.add_timer_event(
-    config.INTERVAL_LED_BLINK_MS,
-    tasks.on_event_timer_callback_blink_led
-)
-# Thêm task: event_manager.add_timer_event(interval_ms, tasks.on_event_timer_callback_xxx)
+# Gọi task_init()
+task1.task_init()
+task2.task_init()
 
-# In ra serial khi chạy (Serial Monitor 115200)
+# Đăng ký task_run() của từng task vào event_manager (timer event)
+event_manager.add_timer_event(config.INTERVAL_TASK1_MS, task1.task_run)
+event_manager.add_timer_event(config.INTERVAL_TASK2_MS, task2.task_run)
+
+# In ra serial (Serial Monitor 115200)
 print("Yolobit event_manager - bat dau.")
 
-# Vòng lặp chính: chạy event manager (giống code kéo thả OhStem)
 while True:
     event_manager.run()
     time.sleep_ms(10)

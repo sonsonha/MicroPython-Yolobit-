@@ -1,6 +1,6 @@
 # Yolobit MicroPython – Template RTOS (VSCode)
 
-Template lập trình **MicroPython** cho **Yolo:Bit** (OhStem) trên **VSCode**, dùng thư viện **event_manager** của OhStem (giống code do app kéo thả sinh ra). Các "task" là **timer event callback**, đăng ký bằng `event_manager.add_timer_event(interval_ms, callback)`, vòng lặp chính: `event_manager.run()` + `time.sleep_ms(10)`.
+Mỗi **task** nằm trong **một file riêng** (task1.py, task2.py, ...), có **hai hàm**: `task_init()` (chạy một lần) và `task_run()` (được đăng ký vào `event_manager.add_timer_event()`). Biến **status** (nếu cần) khai báo **toàn cục** trong từng file task.
 
 ## Yêu cầu
 
@@ -13,9 +13,10 @@ Template lập trình **MicroPython** cho **Yolo:Bit** (OhStem) trên **VSCode**
 ```
 yolobit-micropython/
 ├── boot.py        # (Tùy chọn) Chạy trước main.py
-├── main.py        # Điểm vào, scheduler và danh sách task
-├── config.py      # Cấu hình: LED, chu kỳ task, ...
-├── tasks.py       # Các task: in "Xin chào!", chớp LED, ...
+├── main.py        # Điểm vào: event_manager.reset(), task_init(), add_timer_event(..., task_run)
+├── config.py      # Cấu hình chu kỳ task (INTERVAL_TASK1_MS, INTERVAL_TASK2_MS, ...)
+├── task1.py       # Task 1: task_init(), task_run(), status toàn cục
+├── task2.py       # Task 2: task_init(), task_run(), status toàn cục (chớp HEART/HEART_SMALL)
 ├── pymakr.conf    # Cấu hình PyMakr (sửa address = cổng COM)
 └── README.md      # Hướng dẫn này
 ```
@@ -26,7 +27,7 @@ yolobit-micropython/
 2. **Mở thư mục project** trong VSCode.
 3. **Chọn interpreter/port** MicroPython đúng với cổng COM của Yolo:Bit.
 4. **Nạp code** (Run / Upload tùy extension):
-   - Nạp ít nhất: `main.py`, `config.py`, `tasks.py`.
+   - Nạp ít nhất: `main.py`, `config.py`, `task1.py`, `task2.py`.
 5. **Mở Serial Monitor** (baud thường **115200**) để xem dòng `Xin chào!` và gỡ lỗi.
 
 ### Dùng extension PyMakr (VSCode)
@@ -64,55 +65,54 @@ PyMakr dùng được với Yolo:Bit. Cần làm đúng hai việc: **mở đún
   - Nếu Yolo:Bit **có nguồn pin/ắc-quy** (cổng pin hoặc pin gắn trên board): rút USB thì board vẫn chạy bằng nguồn đó, LED vẫn chớp, code vẫn chạy bình thường.
 - Tóm lại: Upload một lần, code được lưu trên board; mỗi lần bật nguồn/reset là chạy. Rút COM chỉ ngắt nguồn (nếu không có pin), không xóa code.
 
-## Hai task mẫu (timer event callbacks)
+## Hai task mẫu (mỗi task một file, task_init + task_run)
 
-| Callback | Mô tả | Chu kỳ (mặc định) |
-|----------|--------|--------------------|
-| **on_event_timer_callback_print_hello** | In ra serial "Xin chào!" | Mỗi 1 giây |
-| **on_event_timer_callback_blink_led**   | Chớp tắt LED (P0 hoặc onboard) | Mỗi 0,5 giây |
+| File     | Mô tả                                      | Chu kỳ (mặc định) |
+|----------|--------------------------------------------|--------------------|
+| **task1.py** | In "Xin chào!" ra serial; có `status` toàn cục, `task_init()`, `task_run()` | 1 giây  |
+| **task2.py** | Chớp hình trái tim trên display (HEART / HEART_SMALL); `status` toàn cục, `task_init()`, `task_run()` — code giống block kéo thả OhStem | 0,5 giây |
 
-- **In ra terminal:** dùng `print("Xin chào!")` trong task; xem trên Serial Monitor (app OhStem hoặc VSCode).
-- **LED:** cấu hình trong `config.py` — dùng LED trên board hoặc LED nối vào chân **P0** (giống kéo thả: chân P0).
+- **task1:** `task_run()` gọi `print("Xin chào!")`; xem trên Serial Monitor (115200).
+- **task2:** `task_run()` đảo `status = 1 - status`, rồi `display.show(Image.HEART)` hoặc `display.show(Image.HEART_SMALL)` (từ `yolobit`).
 
 ## Cấu hình (config.py)
 
-- **LED**
-  - Dùng **LED trên board:** `USE_BUILTIN_LED = True`, `LED_GPIO = 2` (hoặc theo tài liệu board).
-  - Dùng **LED ngoài ở P0:** `USE_BUILTIN_LED = False`, `PIN_LED = "pin0"`.
 - **Chu kỳ task**
-  - `INTERVAL_PRINT_HELLO_MS = 1000`  → in "Xin chào!" mỗi 1 giây.
-  - `INTERVAL_LED_BLINK_MS = 500`    → chớp LED mỗi 0,5 giây.
+  - `INTERVAL_TASK1_MS = 1000` → task 1 (in "Xin chào!") mỗi 1 giây.
+  - `INTERVAL_TASK2_MS = 500`  → task 2 (chớp HEART/HEART_SMALL) mỗi 0,5 giây.
+- Các biến LED (USE_BUILTIN_LED, PIN_LED, ...) vẫn có trong config nếu task khác cần dùng chân.
 
-Chỉnh các giá trị này cho phù hợp board và bài tập.
+## Thêm task mới (file riêng, task_init + task_run)
 
-## Thêm task mới (timer event)
-
-1. **Trong `tasks.py`:** viết callback đặt tên `on_event_timer_callback_<mô_tả>`, ví dụ:
+1. **Tạo file `taskN.py`** (ví dụ `task3.py`):
+   - Khai báo **status** (hoặc biến trạng thái khác) **toàn cục** nếu cần.
+   - Hàm **`task_init()`**: khởi tạo một lần (gán status = 0, setup cảm biến, ...).
+   - Hàm **`task_run()`**: logic chạy mỗi chu kỳ (sẽ được add vào event_manager).
    ```python
-   def on_event_timer_callback_do_something():
-       print("Task cua toi")
-       # ... gọi API yolobit / machine / thư viện OhStem
+   # task3.py
+   from yolobit import *  # nếu cần
+   status = 0
+   def task_init():
+       global status
+       status = 0
+   def task_run():
+       global status
+       # ... logic task
    ```
-2. **Trong `config.py`:** thêm chu kỳ (ms), ví dụ `INTERVAL_MY_TASK_MS = 2000`.
-3. **Trong `main.py`:** sau khi `event_manager.reset()`, thêm dòng:
-   ```python
-   event_manager.add_timer_event(config.INTERVAL_MY_TASK_MS, tasks.on_event_timer_callback_do_something)
-   ```
-
-Chỉ dùng **thư viện Yolo:Bit/OhStem** (yolobit, event_manager, machine, time, ...) để đồng bộ với code kéo thả.
+2. **Trong `config.py`:** thêm `INTERVAL_TASK3_MS = 2000` (ví dụ).
+3. **Trong `main.py`:** import task3; gọi `task3.task_init()` sau khi reset; thêm `event_manager.add_timer_event(config.INTERVAL_TASK3_MS, task3.task_run)`.
 
 ## Đồng bộ với code kéo thả OhStem
 
-- **event_manager:** Chương trình dùng thư viện **event_manager** của OhStem: `event_manager.reset()`, `event_manager.add_timer_event(interval_ms, callback)`, vòng lặp `event_manager.run()` + `time.sleep_ms(10)`. Cấu trúc giống code Python do app OhStem sinh ra khi lập trình kéo thả.
-- **Chân:** Dùng tên `pin0`, `pin1`, `pin2`, ... tương ứng P0, P1, P2 trong app OhStem; cấu hình trong `config.py` bằng `PIN_LED = "pin0"`, v.v.
-- **API:** Dùng `write_digital(0/1)`, `read_digital()`, `write_analog()`, `read_analog()` trên đối tượng pin từ `yolobit` như trong code sinh ra từ khối kéo thả.
-- **Thư viện mở rộng:** Nếu dùng Kit (Home:Bit, Plant:Bit, City:Bit, …), copy các file `.py` thư viện đó vào project và `import` trong `tasks.py` hoặc `main.py` giống trong app OhStem.
+- **event_manager:** `event_manager.reset()`, mỗi task có `task_init()` (gọi một lần) và `task_run()` (đăng ký bằng `event_manager.add_timer_event(interval_ms, taskN.task_run)`), vòng lặp `event_manager.run()` + `time.sleep_ms(10)`. Cấu trúc và API giống code do app OhStem sinh ra.
+- **Mỗi task một file:** task1.py, task2.py, ...; trong file khai báo **status** (hoặc biến trạng thái) **toàn cục**, có **task_init()** và **task_run()**.
+- **Chân / display:** Dùng `yolobit` (pin0, pin1, display, Image, ...) như trong code kéo thả.
 
 ## Gỡ lỗi
 
 - Không thấy "Xin chào!" → kiểm tra Serial Monitor đúng cổng và baud **115200**.
-- LED không chớp → kiểm tra `config.py` (LED onboard vs P0), nối dây đúng chân và GND.
-- Lỗi `no module named 'yolobit'` → dùng firmware MicroPython đúng cho Yolo:Bit (OhStem).
+- Display không chớp hình trái tim → kiểm tra Yolo:Bit có màn hình LED matrix và firmware có `display`, `Image` từ yolobit.
+- Lỗi `no module named 'yolobit'` / `no module named 'event_manager'` → dùng firmware MicroPython đúng cho Yolo:Bit (OhStem).
 - **PyMakr:** Chỉ thấy Bluetooth (tty.RedmiBuds, tty.EDIFIER...) → cắm Yolo:Bit bằng **cáp USB** và cài driver; chọn cổng serial USB (ví dụ `/dev/cu.usbserial-*`, `COMx`), không chọn cổng Bluetooth. Không mở được project → dùng **File → Open Folder** vào thư mục chứa `main.py`/`pymakr.conf`, không tạo "Create project" mới.
 
 ## Tài liệu tham khảo
