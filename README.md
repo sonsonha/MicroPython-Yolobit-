@@ -6,12 +6,12 @@ Template này giúp bạn lập trình **Yolo:Bit (OhStem)** bằng **MicroPytho
 - **Mỗi task một file**: `task1.py`, `task2.py`, ...; mỗi file có **2 hàm**:
   - `task_init()` chạy **1 lần**
   - `task_run()` chạy **lặp theo chu kỳ** (được add vào event_manager)
-- **Biến trạng thái** (ví dụ `status`) khai báo **toàn cục trong từng file task** (giống cách OhStem sinh code).
+- **Biến trạng thái** (ví dụ `status`) khai báo **toàn cục trong từng file task**.
 
 ## Yêu cầu
 
-- **Phần cứng**: Yolo:Bit (OhStem) + cáp USB (cáp dữ liệu, không chỉ sạc).
-- **Firmware**: MicroPython cho Yolo:Bit (cài qua app OhStem). Cần có `yolobit` (thường có sẵn trên firmware OhStem).
+- **Phần cứng**: Yolo:Bit (OhStem) + cáp USB type C.
+- **Firmware**: MicroPython cho Yolo:Bit.
 - **VSCode**: cài extension **PyMakr** (Pycom).
 - **Driver USB**:
   - Windows: cần driver CH340/CP210x tùy board.
@@ -27,6 +27,7 @@ yolobit-micropython/
 ├── task1.py         # task 1: task_init(), task_run(), status toàn cục
 ├── task2.py         # task 2: chớp Image.HEART / Image.HEART_SMALL (giống block OhStem)
 ├── pymakr.conf      # cấu hình PyMakr (tùy chọn)
+├── images/          # ảnh minh họa cho README (extension, device explorer, terminal)
 └── README.md
 ```
 
@@ -34,9 +35,23 @@ yolobit-micropython/
 
 ### A. Cài đặt PyMakr
 
-1. Mở VSCode → Extensions → tìm **PyMakr** (Pycom) → Install.
-2. Cắm Yolo:Bit vào máy tính bằng **cáp USB**.
-3. Kiểm tra máy có thấy cổng serial USB:
+**⚠️ Lưu ý quan trọng — tránh cài nhầm extension:**
+
+- Trong Marketplace có **hai** extension tên gần giống nhau:
+  - **Pymakr** (bản ổn định) — **dùng cái này**.
+  - **Pymakr - Preview** — **không cài** bản Preview cho bài này.
+- Cách chọn đúng: tìm **"Pymakr"** của **Pycom**, mô tả "Official Pymakr plugin for Pycom...". Nếu thấy hai mục thì chọn mục **không** có chữ **"Preview"** trong tên.
+- Sau khi cài, trong Extensions bên trái sẽ hiện **Pymakr** (có biểu tượng bánh răng/cấu hình), **không** hiện "Pymakr - Preview".
+- **Nếu đã cài nhầm "Pymakr - Preview"**: vào Extensions → tìm "Pymakr - Preview" → **Uninstall**, sau đó cài lại đúng **Pymakr** (không có chữ Preview).
+
+![Cài đúng extension Pymakr, không chọn Pymakr - Preview](images/pymakr-extension.png)
+
+**Các bước:**
+
+1. Mở VSCode → **Extensions** (Ctrl+Shift+X / Cmd+Shift+X) → ô tìm kiếm gõ **pymakr**.
+2. Cài extension **Pymakr** của **Pycom** (không phải "Pymakr - Preview").
+3. Cắm Yolo:Bit vào máy tính bằng **cáp USB**.
+4. Kiểm tra máy có thấy cổng serial USB:
    - Windows: Device Manager → Ports (COM & LPT) → thấy `COMx`.
    - macOS: sẽ có `/dev/cu.*` (thường là `/dev/cu.usbserial-*` hoặc `/dev/cu.SLAB_USBtoUART`).
 
@@ -100,10 +115,15 @@ Trong panel PyMakr (bên trái):
 1. Khi đã connect, nhấn **Sync project to device** (hoặc “Upload project to device”).
 2. Chờ sync xong.
 
-### F. Mở Terminal/REPL để xem `print()` và debug
+### F. Mở Serial Terminal/REPL để xem `print()` và debug
 
-1. Trong PyMakr, mở **Terminal/REPL** (console).
-2. Bạn có thể kiểm tra file đã lên board chưa:
+Để xem dòng chữ in ra từ board (ví dụ "Xin chào!"), bạn cần mở **Serial Terminal** (REPL) của PyMakr:
+
+1. Trong **panel PyMakr** (bên trái), sau khi đã **Connect device**, nhấn vào icon **Create terminal** (hộp nhỏ có mũi tên phải, tooltip hiện "Create terminal"). Đây chính là Serial/REPL — mọi `print()` từ board sẽ hiện ở đây.
+
+![Trong PyMakr: nhấn icon Create terminal để mở Serial/REPL](images/pymakr-create-terminal.png)
+
+2. Trong cửa sổ Terminal vừa mở, bạn có thể kiểm tra file đã lên board chưa:
 
 ```python
 import os
@@ -117,11 +137,17 @@ Danh sách phải có (tối thiểu):
 - `task2.py`
 - `event_manager.py` (nếu firmware không có module này)
 
-### G. “Open device in file explorer” để kiểm tra file trên board
+### G. “Open device in file explorer” — xem và sửa file trên thiết bị
 
-1. Trong PyMakr, chọn **Open device in file explorer**.
-2. Bạn sẽ thấy “filesystem” của board.
-3. Đối chiếu xem các file `.py` đã nằm trên device.
+Sau khi sync, bạn có thể **xem và sửa trực tiếp** file trên Yolo:Bit:
+
+1. Trong PyMakr, nhấn **Open device in file explorer** (icon thư mục có tia chớp).
+2. Trong File Explorer (hoặc panel tương tự) sẽ xuất hiện **hai phần**:
+   - **Trên**: thư mục project **trên máy** (ví dụ MicroPython-Yolobit-...).
+   - **Dưới**: **serial:/COMxx** (hoặc `/dev/cu.xxx`) — đây chính là **filesystem trên thiết bị**. Các file bạn sync lên (main.py, task1.py, ...) sẽ hiển thị ở đây.
+3. Bạn có thể **mở và chỉnh sửa** file ngay trong cây serial:/COMxx; lưu lại sẽ ghi thẳng lên board (hữu ích khi chỉ sửa nhanh trên device mà không cần sync lại cả project).
+
+![Open device in file explorer: project local (trên) và filesystem trên thiết bị serial:/COMxx (dưới)](images/pymakr-device-explorer.png)
 
 ### H. Chạy chương trình
 
@@ -176,7 +202,7 @@ Chu kỳ nằm trong `config.py`:
 - `INTERVAL_TASK1_MS = 1000`
 - `INTERVAL_TASK2_MS = 500`
 
-## Thêm task mới (cho sinh viên)
+## Thêm task mới
 
 1. Tạo `task3.py` có `status`, `task_init()`, `task_run()`.
 2. Thêm `INTERVAL_TASK3_MS` trong `config.py`.
