@@ -26,7 +26,7 @@ yolobit-micropython/
 ├── config.py        # chu kỳ task (INTERVAL_TASK1_MS, ...) + tùy chọn WiFi/MQTT cho task_mqtt
 ├── task1.py, task2.py           # task mẫu: in serial, chớp đèn
 ├── task_mqtt.py, task_ntp.py, task_aiot.py, task_event.py  # task kiểm thử từng thư viện lib
-├── pymakr.conf      # PyMakr: sync_file_types = "py" → chỉ upload file .py (vẫn sync cả thư mục lib/)
+├── pymakr.conf      # PyMakr nhận diện project (chỉ giữ name, ctrl_c_on_connect, safe_boot_on_upload)
 ├── yolobit-micropython.code-workspace  # Mở file này (Open Workspace from File) để PyMakr nhận project và hiện ADD DEVICES
 ├── lib/             # Thư viện OhStem: MQTT, NTP, Sự kiện, AIOT (xem lib/README.md)
 ├── images/          # ảnh minh họa cho README
@@ -67,43 +67,24 @@ yolobit-micropython/
 Lưu ý:
 - **Đừng tạo “New project” trong PyMakr** cho trường hợp này. Dùng **Open Workspace from File…** và chọn file `yolobit-micropython.code-workspace` để PyMakr nhận project và hiện ADD DEVICES.
 
-### C. Cấu hình `pymakr.conf` (khuyến nghị)
+### C. Cấu hình `pymakr.conf`
 
-Mở file `pymakr.conf`. Bạn có thể để `address` trống và chọn cổng khi Add device, hoặc điền sẵn.
-
-Ví dụ (Windows):
+File `pymakr.conf` giúp PyMakr nhận diện project. Nội dung hiện tại:
 
 ```json
 {
   "name": "Yolobit MicroPython",
-  "address": "COM13",
-  "sync_folder": "",
-  "sync_file_types": "py",
   "ctrl_c_on_connect": true,
   "safe_boot_on_upload": false
 }
 ```
 
-Ví dụ (macOS):
-
-```json
-{
-  "name": "Yolobit MicroPython",
-  "address": "/dev/cu.usbserial-0001",
-  "sync_folder": "",
-  "sync_file_types": "py",
-  "ctrl_c_on_connect": true,
-  "safe_boot_on_upload": false
-}
-```
-
-Giải thích nhanh:
+Giải thích:
 - **name**: tên project hiển thị trong PyMakr.
-- **address**: cổng serial (COMx hoặc `/dev/cu.*`).
-- **sync_folder**: để rỗng = sync **toàn bộ** project folder.
 - **ctrl_c_on_connect**: tự gửi Ctrl+C khi connect để dừng script đang chạy (giúp upload ổn định).
-- **sync_file_types**: đặt `"py"` → PyMakr **chỉ sync file .py** lên board (không upload README.md, .json, v.v.).
 - **safe_boot_on_upload**: thường để `false`; khi upload bị lỗi do script đang chạy, có thể thử bật `true` (tùy firmware).
+
+> **Lưu ý Pymakr 2:** Các property `address`, `sync_folder`, `sync_file_types` đã bị **deprecated/loại bỏ** trong Pymakr 2 mới. Cổng COM được chọn khi **Add device** và lưu trong session VS Code. Upload file dùng context menu (chuột phải) hoặc nút **Sync project to device** trong panel PyMakr.
 
 ### D. Add device → Connect device
 
@@ -185,7 +166,7 @@ Lưu ý: Nếu `main.py` chạy vòng lặp vô hạn, REPL sẽ “bận”. Mu
 
 Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT**, **Sự kiện**, **MQTT**, **NTP**. Project này đã kèm sẵn các thư viện tương ứng trong thư mục **`lib/`** để dùng khi lập trình Python trên VSCode.
 
-**Lưu ý:** Thư viện nằm trong **`lib/`** (và `lib/aiot/`). Khi **Sync project to device**, PyMakr đồng bộ **toàn bộ cây thư mục** (vì `sync_folder` để rỗng); **sync_file_types = "py"** chỉ lọc theo loại file nên mọi file **.py** trong project — kể cả trong `lib/`, `lib/aiot/` — đều được upload, còn README.md, .json, v.v. thì không. Vì vậy bạn có thể upload được thư mục **lib** lên Yolo:Bit và dùng `from lib.mqtt import mqtt`, `from lib.aiot.aiot_dht20 import DHT20`, ... Chi tiết và ví dụ xem **`lib/README.md`**.
+**Lưu ý:** Thư viện nằm trong **`lib/`** (và `lib/aiot/`). Khi **Sync project to device**, PyMakr 2 đồng bộ **toàn bộ cây thư mục** project lên board. Nếu chỉ muốn upload một số file/folder cụ thể, chuột phải vào file/folder trong Explorer → chọn **Upload to device**. Vì vậy bạn có thể upload được thư mục **lib** lên Yolo:Bit và dùng `from lib.mqtt import mqtt`, `from lib.aiot.aiot_dht20 import DHT20`, ... Chi tiết và ví dụ xem **`lib/README.md`**.
 
 ---
 
