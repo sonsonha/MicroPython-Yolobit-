@@ -26,8 +26,12 @@ yolobit-micropython/
 ├── config.py        # chu kỳ task: INTERVAL_TASK1_MS, INTERVAL_TASK2_MS, ...
 ├── task1.py         # task 1: task_init(), task_run(), status toàn cục
 ├── task2.py         # task 2: chớp Image.HEART / Image.HEART_SMALL (giống block OhStem)
-├── pymakr.conf      # cấu hình PyMakr (tùy chọn)
-├── lib/             # Thư viện OhStem: MQTT, NTP, Sự kiện, AIOT KIT (xem lib/README.md)
+├── pymakr.conf      # PyMakr: sync_file_types = "py" → chỉ upload file .py
+├── lib/             # Bản gốc thư viện (tham khảo); file chạy trên board ở cùng cấp với main.py
+├── event_manager_ohstem.py  # event_manager đầy đủ OhStem (timer + message + condition)
+├── mqtt.py, umqtt_simple.py, umqtt_robust.py, utility.py  # MQTT OhStem
+├── ntp_helper.py            # NTP
+├── aiot_dht20.py, aiot_rgbled.py  # AIOT KIT (DHT20, NeoPixel)
 ├── images/          # ảnh minh họa cho README (extension, device explorer, terminal)
 └── README.md
 ```
@@ -75,7 +79,7 @@ Ví dụ (Windows):
   "name": "Yolobit MicroPython",
   "address": "COM13",
   "sync_folder": "",
-  "sync_file_types": "py,txt,log,json",
+  "sync_file_types": "py",
   "ctrl_c_on_connect": true,
   "safe_boot_on_upload": false
 }
@@ -88,7 +92,7 @@ Ví dụ (macOS):
   "name": "Yolobit MicroPython",
   "address": "/dev/cu.usbserial-0001",
   "sync_folder": "",
-  "sync_file_types": "py,txt,log,json",
+  "sync_file_types": "py",
   "ctrl_c_on_connect": true,
   "safe_boot_on_upload": false
 }
@@ -99,7 +103,8 @@ Giải thích nhanh:
 - **address**: cổng serial (COMx hoặc `/dev/cu.*`).
 - **sync_folder**: để rỗng = sync **toàn bộ** project folder.
 - **ctrl_c_on_connect**: tự gửi Ctrl+C khi connect để dừng script đang chạy (giúp upload ổn định).
-- **safe_boot_on_upload**: thường để `false`; khi upload bị lỗi do script đang chạy, bạn có thể thử bật `true` (tùy firmware).
+- **sync_file_types**: đặt `"py"` → PyMakr **chỉ sync file .py** lên board (không upload README.md, .json, v.v.).
+- **safe_boot_on_upload**: thường để `false`; khi upload bị lỗi do script đang chạy, có thể thử bật `true` (tùy firmware).
 
 ### D. Add device → Connect device
 
@@ -181,7 +186,7 @@ Lưu ý: Nếu `main.py` chạy vòng lặp vô hạn, REPL sẽ “bận”. Mu
 
 Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT**, **Sự kiện**, **MQTT**, **NTP**. Project này đã kèm sẵn các thư viện tương ứng trong thư mục **`lib/`** để dùng khi lập trình Python trên VSCode.
 
-**Lưu ý:** Khi **Sync project to device**, cần đồng bộ cả thư mục **`lib`** lên board. Chi tiết đầy đủ và ví dụ xem **`lib/README.md`**.
+**Lưu ý:** Các file thư viện (mqtt, ntp_helper, event_manager_ohstem, aiot_dht20, aiot_rgbled, …) nằm **cùng cấp với main.py** để PyMakr sync lên board được. Trong `pymakr.conf` đặt **sync_file_types = "py"** thì chỉ file `.py` được upload (README.md, .json không đưa lên thiết bị). Chi tiết và ví dụ xem **`lib/README.md`**.
 
 ---
 
@@ -189,7 +194,7 @@ Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT*
 
 **Nguồn OhStem:** [AITT-VN/yolobit_extension_mqtt](https://github.com/AITT-VN/yolobit_extension_mqtt)
 
-**Import:** `from lib.mqtt import mqtt`
+**Import:** `from mqtt import mqtt`
 
 | Hàm / thuộc tính | Mô tả |
 |------------------|--------|
@@ -203,7 +208,7 @@ Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT*
 **Ví dụ:**
 
 ```python
-from lib.mqtt import mqtt
+from mqtt import mqtt
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='user', password='')
 mqtt.publish('V1', 'Hello')
@@ -220,7 +225,7 @@ mqtt.on_receive_message('V2', on_msg)
 **Nguồn OhStem (block NTP):** [AITT-VN/yolobit_ntp](https://github.com/AITT-VN/yolobit_ntp)  
 *(Trong repo là block; project dùng `lib/ntp_helper.py` gọi `ntptime` + `machine.RTC` tương thích block.)*
 
-**Import:** `from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str`
+**Import:** `from ntp_helper import set_time_from_ntp, get_time, get_time_str`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -231,8 +236,8 @@ mqtt.on_receive_message('V2', on_msg)
 **Ví dụ:**
 
 ```python
-from lib.mqtt import mqtt
-from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
+from mqtt import mqtt
+from ntp_helper import set_time_from_ntp, get_time, get_time_str
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 set_time_from_ntp(7)  # GMT+7 Việt Nam
 print(get_time_str())  # "2025-02-27 10:30:00"
@@ -245,7 +250,7 @@ y, mo, d, h, mi, s = get_time()
 
 **Nguồn OhStem:** [AITT-VN/yolobit_extension_events](https://github.com/AITT-VN/yolobit_extension_events)
 
-**Import:** `from lib.event_manager_ohstem import event_manager`
+**Import:** `from event_manager_ohstem import event_manager`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -259,7 +264,7 @@ y, mo, d, h, mi, s = get_time()
 **Ví dụ:**
 
 ```python
-from lib.event_manager_ohstem import event_manager
+from event_manager_ohstem import event_manager
 import time
 event_manager.reset()
 def on_timer():
@@ -284,7 +289,7 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 
 #### 4.1. DHT20 – Cảm biến nhiệt độ, độ ẩm
 
-**Import:** `from lib.aiot.aiot_dht20 import DHT20`
+**Import:** `from aiot_dht20 import DHT20`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -296,14 +301,14 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 **Ví dụ:**
 
 ```python
-from lib.aiot.aiot_dht20 import DHT20
+from aiot_dht20 import DHT20
 dht = DHT20()
 print(dht.dht20_temperature(), dht.dht20_humidity())
 ```
 
 #### 4.2. RGBLed – LED RGB (NeoPixel)
 
-**Import:** `from lib.aiot.aiot_rgbled import RGBLed`
+**Import:** `from aiot_rgbled import RGBLed`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -314,7 +319,7 @@ print(dht.dht20_temperature(), dht.dht20_humidity())
 **Ví dụ:**
 
 ```python
-from lib.aiot.aiot_rgbled import RGBLed
+from aiot_rgbled import RGBLed
 rgb = RGBLed(pin14.pin, 4)  # pin14 từ yolobit, 4 LED
 rgb.show(1, (255, 0, 0))    # LED 1 đỏ
 rgb.show(0, (0, 255, 0))    # tất cả xanh lá

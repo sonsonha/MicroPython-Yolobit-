@@ -1,17 +1,15 @@
 # Thư mục lib – Thư viện OhStem cho VSCode/MicroPython
 
-Các thư viện trong thư mục này tương đương **Mở rộng** trên app.ohstem.vn (AIOT KIT, Sự kiện, MQTT, NTP). Dùng khi lập trình bằng Python trên VSCode thay vì kéo thả.
+Các thư viện trong thư mục này tương đương **Mở rộng** trên app.ohstem.vn (AIOT KIT, Sự kiện, MQTT, NTP). Bản **chạy trên board** đã được đặt **cùng cấp với main.py** (mqtt.py, ntp_helper.py, event_manager_ohstem.py, aiot_dht20.py, aiot_rgbled.py, …) để PyMakr sync được; thư mục **lib/** giữ bản gốc để tham khảo.
 
-**Sync:** Khi **Sync project to device** (PyMakr), đảm bảo đồng bộ cả thư mục **`lib`** lên board.
-
-**Import (sau khi có `lib` trên board):**
+**Import (trên board / trong code dùng sau khi Sync):**
 
 ```python
-from lib.mqtt import mqtt
-from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
-from lib.event_manager_ohstem import event_manager
-from lib.aiot.aiot_dht20 import DHT20
-from lib.aiot.aiot_rgbled import RGBLed
+from mqtt import mqtt
+from ntp_helper import set_time_from_ntp, get_time, get_time_str
+from event_manager_ohstem import event_manager
+from aiot_dht20 import DHT20
+from aiot_rgbled import RGBLed
 ```
 
 ---
@@ -36,7 +34,7 @@ from lib.aiot.aiot_rgbled import RGBLed
 ### Ví dụ
 
 ```python
-from lib.mqtt import mqtt
+from mqtt import mqtt
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='user', password='')
 mqtt.publish('V1', 'Hello')
@@ -68,8 +66,8 @@ while True:
 ### Ví dụ
 
 ```python
-from lib.mqtt import mqtt
-from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
+from mqtt import mqtt
+from ntp_helper import set_time_from_ntp, get_time, get_time_str
 mqtt.connect_wifi('TenWiFi', 'MatKhau')
 set_time_from_ntp(7)
 print(get_time_str())
@@ -98,7 +96,7 @@ y, mo, d, h, mi, s = get_time()
 ### Ví dụ
 
 ```python
-from lib.event_manager_ohstem import event_manager
+from event_manager_ohstem import event_manager
 import time
 event_manager.reset()
 event_manager.add_timer_event(1000, lambda: print('timer'))

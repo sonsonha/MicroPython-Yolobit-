@@ -10,7 +10,7 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 
 ## aiot_dht20 – Cảm biến nhiệt độ, độ ẩm DHT20
 
-**Import:** `from lib.aiot.aiot_dht20 import DHT20`
+**Import:** `from aiot_dht20 import DHT20`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -22,7 +22,7 @@ Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tươn
 **Ví dụ:**
 
 ```python
-from lib.aiot.aiot_dht20 import DHT20
+from aiot_dht20 import DHT20
 dht = DHT20()
 print(dht.dht20_temperature(), dht.dht20_humidity())
 ```
@@ -31,7 +31,7 @@ print(dht.dht20_temperature(), dht.dht20_humidity())
 
 ## aiot_rgbled – LED RGB (NeoPixel)
 
-**Import:** `from lib.aiot.aiot_rgbled import RGBLed`
+**Import:** `from aiot_rgbled import RGBLed`
 
 | Hàm | Mô tả |
 |-----|--------|
@@ -43,7 +43,7 @@ print(dht.dht20_temperature(), dht.dht20_humidity())
 
 ```python
 from yolobit import *
-from lib.aiot.aiot_rgbled import RGBLed
+from aiot_rgbled import RGBLed
 rgb = RGBLed(pin14.pin, 4)
 rgb.show(1, (255, 0, 0))   # LED 1 đỏ
 rgb.show(0, (0, 255, 0))   # tất cả xanh lá
