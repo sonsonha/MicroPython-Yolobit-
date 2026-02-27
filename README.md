@@ -112,7 +112,8 @@ PyMakr dùng được với Yolo:Bit. Cần làm đúng hai việc: **mở đún
 
 - Không thấy "Xin chào!" → kiểm tra Serial Monitor đúng cổng và baud **115200**.
 - Display không chớp hình trái tim → kiểm tra Yolo:Bit có màn hình LED matrix và firmware có `display`, `Image` từ yolobit.
-- Lỗi `no module named 'yolobit'` / `no module named 'event_manager'` → dùng firmware MicroPython đúng cho Yolo:Bit (OhStem).
+- Lỗi `no module named 'yolobit'` → dùng firmware MicroPython đúng cho Yolo:Bit (OhStem).
+- Lỗi `no module named 'event_manager'` → firmware của bạn chưa có thư viện OhStem; project này đã kèm **`event_manager.py`** để chạy được cấu trúc giống code kéo thả. Hãy upload thêm file này lên board cùng `main.py`.
 - **PyMakr:** Chỉ thấy Bluetooth (tty.RedmiBuds, tty.EDIFIER...) → cắm Yolo:Bit bằng **cáp USB** và cài driver; chọn cổng serial USB (ví dụ `/dev/cu.usbserial-*`, `COMx`), không chọn cổng Bluetooth. Không mở được project → dùng **File → Open Folder** vào thư mục chứa `main.py`/`pymakr.conf`, không tạo "Create project" mới.
 
 ## Tài liệu tham khảo
