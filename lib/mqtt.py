@@ -27,6 +27,7 @@ class MQTT:
         self.wifi_password = ''
         self.callbacks = {}
         self.last_sent = 0
+        self.station = None  # chỉ có sau khi gọi connect_wifi()
 
     def __on_receive_message(self, topic, msg):
         msg = msg.decode('ascii')
@@ -67,6 +68,8 @@ class MQTT:
         say('Wifi connected. IP:' + self.station.ifconfig()[0])
 
     def wifi_connected(self):
+        if self.station is None:
+            return False
         return self.station.isconnected()
 
     def connect_broker(self, server='mqtt.ohstem.vn', port=1883, username='', password=''):

@@ -30,6 +30,12 @@ def task_init():
     if _dht_ok:
         try:
             dht = DHT20()
+        except OSError as e:
+            if e.args[0] == 19:  # ENODEV
+                print("[AIOT] DHT20: chua cam cam bien hoac sai chan I2C (pin19/20)")
+            else:
+                print("[AIOT] DHT20:", e)
+            dht = None
         except Exception as e:
             print("[AIOT] DHT20:", e)
             dht = None
