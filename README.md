@@ -27,6 +27,7 @@ yolobit-micropython/
 ├── task1.py         # task 1: task_init(), task_run(), status toàn cục
 ├── task2.py         # task 2: chớp Image.HEART / Image.HEART_SMALL (giống block OhStem)
 ├── pymakr.conf      # cấu hình PyMakr (tùy chọn)
+├── lib/             # Thư viện OhStem: MQTT, NTP, Sự kiện, AIOT KIT (xem lib/README.md)
 ├── images/          # ảnh minh họa cho README (extension, device explorer, terminal)
 └── README.md
 ```
@@ -176,6 +177,163 @@ Lưu ý: Nếu `main.py` chạy vòng lặp vô hạn, REPL sẽ “bận”. Mu
 - Nếu board được cấp nguồn bằng pin/nguồn ngoài → chương trình vẫn chạy.
 - Mỗi lần bật nguồn/reset, MicroPython tự chạy `boot.py` rồi `main.py`.
 
+## Thư viện mở rộng (lib) – MQTT, NTP, Sự kiện, AIOT KIT
+
+Trên app.ohstem.vn, trong **Mở rộng** có các thư viện như **AIOT KIT**, **Sự kiện**, **MQTT**, **NTP**. Project này đã kèm sẵn các thư viện tương ứng trong thư mục **`lib/`** để dùng khi lập trình Python trên VSCode.
+
+**Lưu ý:** Khi **Sync project to device**, cần đồng bộ cả thư mục **`lib`** lên board. Chi tiết đầy đủ và ví dụ xem **`lib/README.md`**.
+
+---
+
+### 1. MQTT (WiFi + broker MQTT)
+
+**Nguồn OhStem:** [AITT-VN/yolobit_extension_mqtt](https://github.com/AITT-VN/yolobit_extension_mqtt)
+
+**Import:** `from lib.mqtt import mqtt`
+
+| Hàm / thuộc tính | Mô tả |
+|------------------|--------|
+| `mqtt.connect_wifi(ssid, password, wait_for_connected=True)` | Kết nối WiFi. `wait_for_connected`: chờ tới khi kết nối xong (mặc định True). |
+| `mqtt.wifi_connected()` | Trả về `True`/`False` — WiFi đã kết nối chưa. |
+| `mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='', password='')` | Kết nối broker MQTT. Mặc định server OhStem. Với `mqtt.ohstem.vn` hoặc `io.adafruit.com`, topic sẽ có prefix `username/feeds/`. |
+| `mqtt.publish(topic, message)` | Gửi tin nhắn lên topic. Có giới hạn tối thiểu 1 giây giữa hai lần gửi. |
+| `mqtt.on_receive_message(topic, callback)` | Đăng ký callback khi nhận tin trên topic. `callback(msg)` nhận chuỗi `msg`. |
+| `mqtt.check_message()` | Kiểm tra tin đến (gọi trong vòng lặp chính). Tự reconnect WiFi nếu mất kết nối. |
+
+**Ví dụ:**
+
+```python
+from lib.mqtt import mqtt
+mqtt.connect_wifi('TenWiFi', 'MatKhau')
+mqtt.connect_broker(server='mqtt.ohstem.vn', port=1883, username='user', password='')
+mqtt.publish('V1', 'Hello')
+def on_msg(msg):
+    print('Nhan:', msg)
+mqtt.on_receive_message('V2', on_msg)
+# Trong vòng lặp: mqtt.check_message()
+```
+
+---
+
+### 2. NTP – Lấy thời gian theo internet
+
+**Nguồn OhStem (block NTP):** [AITT-VN/yolobit_ntp](https://github.com/AITT-VN/yolobit_ntp)  
+*(Trong repo là block; project dùng `lib/ntp_helper.py` gọi `ntptime` + `machine.RTC` tương thích block.)*
+
+**Import:** `from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str`
+
+| Hàm | Mô tả |
+|-----|--------|
+| `set_time_from_ntp(gmt_offset=7)` | Đồng bộ giờ từ NTP, áp múi giờ. `gmt_offset`: +7 (VN), +8, -5, ... Gọi **sau khi đã kết nối WiFi**. Trả về `True`/`False`. |
+| `get_time()` | Trả về `(year, month, day, hour, minute, second)` từ RTC. |
+| `get_time_str()` | Trả về chuỗi dạng `"YYYY-MM-DD HH:MM:SS"`. |
+
+**Ví dụ:**
+
+```python
+from lib.mqtt import mqtt
+from lib.ntp_helper import set_time_from_ntp, get_time, get_time_str
+mqtt.connect_wifi('TenWiFi', 'MatKhau')
+set_time_from_ntp(7)  # GMT+7 Việt Nam
+print(get_time_str())  # "2025-02-27 10:30:00"
+y, mo, d, h, mi, s = get_time()
+```
+
+---
+
+### 3. Sự kiện (event_manager đầy đủ)
+
+**Nguồn OhStem:** [AITT-VN/yolobit_extension_events](https://github.com/AITT-VN/yolobit_extension_events)
+
+**Import:** `from lib.event_manager_ohstem import event_manager`
+
+| Hàm | Mô tả |
+|-----|--------|
+| `event_manager.reset()` | Xóa toàn bộ sự kiện đã đăng ký. |
+| `event_manager.add_timer_event(interval, callback)` | Thêm sự kiện định thời. `interval`: chu kỳ (ms). `callback`: hàm không tham số, gọi mỗi `interval` ms. |
+| `event_manager.add_message_event(message_index, callback)` | Thêm sự kiện theo “message”. Khi gọi `broadcast_message(message_index)` thì `callback()` được gọi. |
+| `event_manager.add_condition_event(condition, callback)` | Thêm sự kiện theo điều kiện. `condition`: hàm không tham số, trả về True/False. Khi True thì gọi `callback()` (có thể chạy trong thread). |
+| `event_manager.broadcast_message(message_index)` | Kích hoạt tất cả callback đã đăng ký với `message_index`. |
+| `event_manager.run()` | Chạy kiểm tra timer/condition và gọi callback tương ứng. Gọi **trong vòng lặp chính** (ví dụ `while True: event_manager.run(); time.sleep_ms(10)`). |
+
+**Ví dụ:**
+
+```python
+from lib.event_manager_ohstem import event_manager
+import time
+event_manager.reset()
+def on_timer():
+    print('timer')
+event_manager.add_timer_event(1000, on_timer)
+def on_msg():
+    print('message 0')
+event_manager.add_message_event(0, on_msg)
+event_manager.broadcast_message(0)  # gọi on_msg
+while True:
+    event_manager.run()
+    time.sleep_ms(10)
+```
+
+---
+
+### 4. AIOT KIT (DHT20, LED RGB, …)
+
+**Nguồn OhStem:** [AITT-VN/yolobit_extension_aiot](https://github.com/AITT-VN/yolobit_extension_aiot)
+
+Cần Yolo:Bit có **yolobit** (pin19, pin20, …) và mạch mở rộng tương thích.
+
+#### 4.1. DHT20 – Cảm biến nhiệt độ, độ ẩm
+
+**Import:** `from lib.aiot.aiot_dht20 import DHT20`
+
+| Hàm | Mô tả |
+|-----|--------|
+| `DHT20()` | Khởi tạo, I2C qua pin19 (SCL), pin20 (SDA). |
+| `dht.read_dht20()` | Đọc dữ liệu thô (list 7 byte). |
+| `dht.dht20_temperature()` | Trả về nhiệt độ (°C, float 1 chữ số thập phân). |
+| `dht.dht20_humidity()` | Trả về độ ẩm (%, float 1 chữ số thập phân). |
+
+**Ví dụ:**
+
+```python
+from lib.aiot.aiot_dht20 import DHT20
+dht = DHT20()
+print(dht.dht20_temperature(), dht.dht20_humidity())
+```
+
+#### 4.2. RGBLed – LED RGB (NeoPixel)
+
+**Import:** `from lib.aiot.aiot_rgbled import RGBLed`
+
+| Hàm | Mô tả |
+|-----|--------|
+| `RGBLed(pin, num_leds)` | Khởi tạo. `pin`: số chân GPIO. `num_leds`: số LED (ví dụ 4). |
+| `rgb.show(index, color, delay=None)` | Hiển thị màu. `index`: 0 = tất cả, 1..num_leds = từng LED. `color`: tuple `(r, g, b)` (0–255). `delay`: nếu có, sau đó tắt (0,0,0). |
+| `rgb.off(index)` | Tắt LED: `index` 0 = tất cả, 1..num_leds = từng LED. |
+
+**Ví dụ:**
+
+```python
+from lib.aiot.aiot_rgbled import RGBLed
+rgb = RGBLed(pin14.pin, 4)  # pin14 từ yolobit, 4 LED
+rgb.show(1, (255, 0, 0))    # LED 1 đỏ
+rgb.show(0, (0, 255, 0))    # tất cả xanh lá
+rgb.off(0)
+```
+
+---
+
+### Link nguồn thư viện OhStem (GitHub AITT-VN)
+
+| Thư viện | Repository |
+|----------|------------|
+| MQTT | https://github.com/AITT-VN/yolobit_extension_mqtt |
+| Sự kiện | https://github.com/AITT-VN/yolobit_extension_events |
+| NTP (block) | https://github.com/AITT-VN/yolobit_ntp |
+| AIOT KIT | https://github.com/AITT-VN/yolobit_extension_aiot |
+
+Tổ chức OhStem (AITT-VN): https://github.com/AITT-VN
+
 ## Các chức năng PyMakr hay dùng (tóm tắt)
 
 - **Add device**: thêm thiết bị theo cổng COM.
@@ -224,3 +382,4 @@ Chu kỳ nằm trong `config.py`:
 
 - [OhStem Education](https://docs.ohstem.vn/)
 - App lập trình: [app.ohstem.vn](https://app.ohstem.vn/) (kéo thả / MicroPython)
+- **Nguồn thư viện (GitHub AITT-VN):** MQTT, Sự kiện, NTP, AIOT KIT — xem mục [Thư viện mở rộng (lib)](#thư-viện-mở-rộng-lib--mqtt-ntp-sự-kiện-aiot-kit) và bảng link ở cuối mục đó.
