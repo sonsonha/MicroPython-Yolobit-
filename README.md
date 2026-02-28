@@ -12,7 +12,8 @@ Template này giúp bạn lập trình **Yolo:Bit (OhStem)** bằng **MicroPytho
 
 - **Phần cứng**: Yolo:Bit (OhStem) + cáp USB type C.
 - **Firmware**: MicroPython cho Yolo:Bit.
-- **VSCode**: cài extension **PyMakr** (Pycom).
+- **VSCode**: cài extension **PyMakr** (Pycom) — không cài "Pymakr - Preview".
+- **Node.js** (bắt buộc cho PyMakr): tải bản **LTS** tại https://nodejs.org — khi cài trên Windows phải tick **"Add to PATH"**. Nếu thiếu Node.js, PyMakr sẽ không hoạt động (lỗi `'node' is not recognized`).
 - **Driver USB**:
   - Windows: cần driver CH340/CP210x tùy board.
   - macOS: thường dùng được ngay; nếu không thấy cổng USB-Serial thì cần cài driver theo OhStem.
@@ -59,13 +60,31 @@ yolobit-micropython/
 
 ### B. Mở đúng project trong VSCode
 
-1. VSCode → **File → Open Folder…**
-2. Chọn thư mục `yolobit-micropython` (thư mục chứa `main.py`, `pymakr.conf`, …).
+> **Quan trọng:** Phải mở bằng **workspace file**, không dùng Open Folder. Nếu mở bằng Open Folder, PyMakr sẽ không nhận project và hiện "No Pymakr projects were found".
 
-**Cách mở để thấy ADD DEVICES:** PyMakr 2 chỉ hiện **ADD DEVICES** khi nhận ra project (thư mục có `pymakr.conf`). Nếu đang mở folder mà vẫn thấy "Create project" / "Open Workspace", hãy dùng **File → Open Workspace from File…** rồi chọn file **`yolobit-micropython.code-workspace`** trong thư mục project — sau đó panel PyMakr sẽ hiện **Yolobit MicroPython** và **ADD DEVICES**.
+**Cách 1 (khuyến nghị — nhanh nhất):**
+
+1. Trong **File Explorer** (Windows) hoặc **Finder** (macOS), tìm đến thư mục project.
+2. **Double-click** vào file **`yolobit-micropython.code-workspace`** → VS Code mở thẳng ở chế độ workspace.
+
+**Cách 2 (từ VS Code):**
+
+1. Mở VS Code (đảm bảo **không** đang mở folder nào — nếu có, chọn **File → Close Folder** trước).
+2. **File → Open Workspace from File…**
+3. Chọn file **`yolobit-micropython.code-workspace`**.
+
+**⚠️ Lỗi thường gặp trên Windows:** Nếu đang mở folder rồi mới nhấn "Open Workspace" trong PyMakr, VS Code có thể "chớp" rồi vẫn đứng nguyên — đây là do xung đột giữa folder mode và workspace mode. Cách khắc phục:
+- **File → Close Folder** trước, rồi mới **File → Open Workspace from File…**
+- Hoặc đóng VS Code hẳn, rồi double-click file `.code-workspace` từ File Explorer.
+- Kiểm tra **Workspace Trust**: `Ctrl+Shift+P` → gõ `Workspace: Manage Workspace Trust` → nhấn **Trust**.
+
+**Khi mở đúng workspace, bạn sẽ thấy:**
+- Thanh tiêu đề hiện **"Yolobit MicroPython (Workspace)"**.
+- Panel PyMakr hiện project **"Yolobit MicroPython"** và nút **ADD DEVICES**.
 
 Lưu ý:
-- **Đừng tạo “New project” trong PyMakr** cho trường hợp này. Dùng **Open Workspace from File…** và chọn file `yolobit-micropython.code-workspace` để PyMakr nhận project và hiện ADD DEVICES.
+- **Đừng tạo "New project" trong PyMakr** — dùng workspace file có sẵn.
+- **Đừng dùng nút "Open Workspace" trong panel PyMakr** nếu bị lỗi — dùng menu **File** của VS Code hoặc double-click file `.code-workspace`.
 
 ### C. Cấu hình `pymakr.conf`
 
@@ -376,12 +395,100 @@ Chu kỳ nằm trong **config.py**:
 
 ## Gỡ lỗi nhanh
 
+### Lỗi import
+
 - `ImportError: no module named 'yolobit'` → firmware không đúng Yolo:Bit/OhStem.
 - `ImportError: no module named 'event_manager'` → firmware thiếu; project này đã kèm **`event_manager.py`**. Đảm bảo bạn đã **sync/upload** file đó lên board.
-- Không thấy log `print()`:
-  - mở đúng **Terminal/REPL** của PyMakr,
-  - dùng **Soft reset** thay vì Hard reset,
-  - hoặc chạy `import main` trong REPL.
+
+### Không thấy log `print()`
+
+- Mở đúng **Terminal/REPL** của PyMakr (nhấn icon **Create terminal** sau khi Connect device).
+- Dùng **Soft reset** thay vì Hard reset.
+- Hoặc chạy `import main` trong REPL.
+
+### Không thấy ADD DEVICES trong PyMakr
+
+- **Phải mở bằng workspace**: File → **Open Workspace from File…** → chọn `yolobit-micropython.code-workspace`. Nếu mở bằng Open Folder thì PyMakr có thể không nhận project.
+- Kiểm tra đã cài đúng extension **Pymakr** (không phải "Pymakr - Preview").
+- File `pymakr.conf` phải tồn tại trong thư mục gốc project.
+
+### "Could not safeboot device. Please hard reset the device and verify that a shield is installed."
+
+- Yolo:Bit **không phải board Pycom** nên **không hỗ trợ safe boot**.
+- Đảm bảo `pymakr.conf` có `"safe_boot_on_upload": false`.
+- Nếu vẫn hiện: nhấn **"Don't show again"** để bỏ qua, hoặc thử **Hard reset** board (rút USB → cắm lại) rồi Connect lại.
+
+### "failed to upload … ValueError: odd-length string"
+
+- Đây là **bug đã biết** của Pymakr khi upload lên board ESP32 (không phải Pycom). Pymakr mã hóa file thành hex để gửi qua REPL, đôi khi hex string bị lẻ ký tự → `unhexlify` lỗi.
+- **Cách khắc phục (thử từng bước):**
+  1. **Hard reset board** (rút USB → cắm lại) → Connect lại → thử Upload lại.
+  2. **Upload từng file/folder**: chuột phải vào file hoặc folder trong Explorer → **"Upload to device"** thay vì Sync toàn bộ project.
+  3. **Xóa file trên board trước**: mở REPL, chạy:
+     ```python
+     import os
+     for f in os.listdir():
+         if f != 'boot.py':
+             os.remove(f)
+     ```
+     Rồi thử Sync lại.
+  4. **Dùng `mpremote` thay thế** (nếu Pymakr vẫn lỗi):
+     ```bash
+     pip install mpremote
+     mpremote connect COMx fs cp -r . :
+     ```
+  5. **Cập nhật Pymakr**: vào Extensions → kiểm tra Pymakr có bản update mới không.
+
+### Upload/Connect bị timeout hoặc disconnect
+
+- Dùng **Soft reset** thay vì Hard reset (Hard reset làm COM port tạm mất).
+- Kiểm tra cáp USB: một số cáp chỉ sạc, không truyền data.
+- Đóng các chương trình khác đang dùng cổng serial (ví dụ Arduino IDE Serial Monitor, PuTTY, ...).
+
+### Pymakr không hoạt động: "command 'pymakr.createProjectPrompt' not found"
+
+Lỗi này nghĩa là extension Pymakr **đã cài nhưng không activate được** — UI hiện nhưng bên trong không chạy.
+
+**Chẩn đoán:**
+1. `Ctrl+Shift+U` → chọn **Pymakr** trong dropdown → xem log lỗi.
+2. `Ctrl+Shift+P` → `Developer: Toggle Developer Tools` → tab **Console** → tìm error đỏ liên quan Pymakr.
+
+**Cách khắc phục (thử từng bước):**
+1. **Cập nhật VS Code** lên bản mới nhất: `Help → Check for Updates`.
+2. **Thử phiên bản Pymakr khác**: Extensions → Pymakr → icon bánh răng → **Install Another Version…** → thử v2.25.1, v2.24.3, hoặc v2.22.6.
+3. **Cài Windows Build Tools** (PowerShell chạy quyền Admin): `npm install --global windows-build-tools`.
+4. **Xóa cache extension**: đóng VS Code → xóa folder `%USERPROFILE%\.vscode\extensions\pycom.pymakr-*` → mở VS Code → cài lại Pymakr.
+5. **Nếu vẫn không được**: dùng **mpremote** hoặc **Thonny** làm phương án thay thế (xem mục bên dưới).
+
+## Phương án thay thế khi Pymakr không hoạt động
+
+Nếu Pymakr không chạy được trên máy, có thể dùng **mpremote** (tool dòng lệnh chính thức của MicroPython) hoặc **Thonny IDE** để upload file và mở REPL.
+
+### Dùng mpremote (dòng lệnh)
+
+```bash
+# Cài đặt (cần Python 3 trên máy)
+pip install mpremote
+
+# Xem danh sách thiết bị
+mpremote devs
+
+# Kết nối REPL (thay COMx bằng cổng thực tế, ví dụ COM13)
+mpremote connect COMx repl
+
+# Upload toàn bộ project lên board
+mpremote connect COMx fs cp -r *.py :
+mpremote connect COMx fs cp -r lib/ :lib/
+
+# Soft reset board (chạy main.py)
+mpremote connect COMx reset
+```
+
+### Dùng Thonny IDE
+
+1. Tải **Thonny** tại https://thonny.org (miễn phí, nhẹ, có sẵn serial/REPL).
+2. Mở Thonny → **Run → Configure interpreter…** → chọn **MicroPython (ESP32)** → chọn đúng cổng COM.
+3. Dùng **File → Open…** rồi upload từng file lên board, hoặc copy-paste code vào REPL.
 
 ## Tài liệu tham khảo
 
